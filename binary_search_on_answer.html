@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — Binary Search on Answer</title>
+  <style>
+    :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --wash:#f4f6f8; --paper:#fff; --accent:#3157d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:0; background:var(--wash); color:var(--ink); font:16px/1.6 Arial,Helvetica,sans-serif; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px; }
+    .paper { background:var(--paper); border-radius:14px; padding:clamp(20px,5vw,32px); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .disabled { color:#9ca3af !important; background:#f9fafb; cursor:not-allowed; }
+    h1 { margin:8px 0 4px; font-size:clamp(25px,6vw,32px); line-height:1.25; }
+    h2 { font-size:19px; margin:24px 0 10px; }
+    .kicker { color:var(--muted); font-size:13px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; }
+    .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .callout, .formula, .question { background:#f8fafc; border-radius:8px; padding:14px 16px; margin:12px 0; }
+    .callout { border-left:4px solid #64748b; }
+    .formula { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; }
+    .example { border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    ul { padding-left:22px; }
+    @media (max-width:420px) { .brief-nav a, .brief-nav span { padding:7px 8px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap"><main class="paper">
+    <nav class="brief-nav" aria-label="Brief navigation">
+      <a href="index.html">← All briefs</a>
+      <a href="daily_cs_professor_brief.html">← Previous</a>
+      <span class="disabled" aria-disabled="true">Next →</span>
+    </nav>
+    <header style="text-align:center;margin-bottom:24px;">
+      <div class="kicker">Daily CS Professor Brief · September 20, 2026</div>
+      <h1>Data Structures &amp; Algorithms: Binary Search on Answer</h1>
+      <p class="subtitle">Focus: solve optimization problems by searching a monotonic answer space.</p>
+    </header>
+
+    <h2>1. Core Concepts</h2>
+    <p>Binary search on answer is a technique for finding the smallest or largest value that satisfies a feasibility condition. Instead of searching an array, search the possible answer values.</p>
+    <ul>
+      <li><strong>Answer space:</strong> every candidate value between a proven lower and upper bound.</li>
+      <li><strong>Feasibility predicate:</strong> <code>can(x)</code>, which answers whether candidate <code>x</code> is achievable.</li>
+      <li><strong>Monotonicity:</strong> once <code>can(x)</code> becomes true (or false), it stays true (or false) in the relevant direction.</li>
+      <li><strong>Boundary:</strong> the first true value for a minimum problem, or the last true value for a maximum problem.</li>
+    </ul>
+    <div class="callout"><strong>Recognition test</strong><br>If the question asks for a minimum/maximum and you can check a guessed answer greedily in linear or near-linear time, look for a monotonic predicate.</div>
+
+    <h2>2. Algorithm &amp; Formulas</h2>
+    <p>For the smallest feasible answer, maintain an inclusive range <code>[lo, hi]</code>. If <code>mid</code> works, keep it and search left; otherwise search right.</p>
+    <div class="formula">while lo &lt; hi:<br>&nbsp;&nbsp;mid = lo + (hi - lo) // 2<br>&nbsp;&nbsp;if can(mid): hi = mid<br>&nbsp;&nbsp;else: lo = mid + 1<br>return lo</div>
+    <p>Typical complexity is <strong>O(log R × C)</strong>, where <code>R = hi - lo + 1</code> is the answer range and <code>C</code> is the cost of one feasibility check. Use <code>lo + (hi - lo) // 2</code> to avoid integer overflow in fixed-width languages.</p>
+
+    <h2>3. Teaching Explanation</h2>
+    <p>Imagine asking: “Can I finish the work in <em>x</em> days?” If the answer is yes for 10 days, it is also yes for 11 days. The answers have a boundary: false, false, false, then true forever. Binary search locates that boundary without testing every day.</p>
+    <p>The hard part is not the loop. It is proving the bounds, writing a correct feasibility check, and explaining why the predicate is monotonic.</p>
+
+    <h2>4. Examples</h2>
+    <div class="example"><strong>Example 1 — Minimum ship capacity</strong><p style="margin:7px 0 0;">Given package weights and a deadline, guess a capacity. Greedily pack packages in order and count days. Capacity too small means “false”; capacity large enough means “true.” Search from the heaviest package to the total weight.</p></div>
+    <div class="example"><strong>Example 2 — Minimum eating speed</strong><p style="margin:7px 0 0;">For piles and <code>H</code> hours, <code>can(k)</code> computes <code>Σ ceil(pile / k)</code>. If the hours fit at speed <code>k</code>, they also fit at any larger speed. Find the first feasible speed.</p></div>
+    <div class="example"><strong>Example 3 — Maximize minimum distance</strong><p style="margin:7px 0 0;">For sorted stall positions, guess a distance <code>d</code> and greedily place each next item at least <code>d</code> away. If placement succeeds, try a larger distance; otherwise reduce it. Search for the last feasible distance.</p></div>
+
+    <h2>5. Common Misconceptions</h2>
+    <ul><li><strong>“Binary search requires a sorted array.”</strong> The answer space must be monotonic; it does not have to be an input array.</li><li><strong>“The predicate can be any check.”</strong> Without monotonicity, binary search can skip the correct answer.</li><li><strong>“Use 0 and 10<sup>9</sup> for every bound.”</strong> Tight, proven bounds reduce bugs and make overflow less likely.</li><li><strong>“A greedy check must produce the optimal construction.”</strong> It only needs to correctly decide feasibility for the guessed answer.</li></ul>
+
+    <h2>6. Exam &amp; Interview Points</h2>
+    <ul><li>State whether you seek the <strong>first true</strong> or <strong>last true</strong> value.</li><li>Derive bounds from the problem: lower bound often comes from a mandatory minimum; upper bound from a simple valid solution.</li><li>Explain the invariant: the answer remains inside <code>[lo, hi]</code>.</li><li>Check division ceilings carefully: <code>ceil(a / b) = (a + b - 1) // b</code> for positive integers.</li><li>Use 64-bit integers when sums or products can exceed 32-bit range.</li></ul>
+
+    <h2>7. Practice Questions</h2>
+    <div class="question"><strong>Q1.</strong> What must be true for binary search on answer to work?<p style="margin:7px 0 0;"><strong>Answer:</strong> Candidate answers must have a monotonic feasibility predicate, plus valid lower and upper bounds.</p></div>
+    <div class="question"><strong>Q2.</strong> A feasibility check costs O(n) and the answer range has R candidates. What is the total complexity?<p style="margin:7px 0 0;"><strong>Answer:</strong> O(n log R).</p></div>
+    <div class="question"><strong>Q3.</strong> For a minimum feasible value, what happens when <code>can(mid)</code> is true?<p style="margin:7px 0 0;"><strong>Answer:</strong> Keep <code>mid</code> as a candidate and search the left half by setting <code>hi = mid</code>.</p></div>
+    <div class="callout" style="margin-top:24px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">When an optimization question has a monotonic yes/no answer, binary-search the answer rather than the data. Prove the range, write <code>can(x)</code>, preserve the boundary invariant, and report O(log range × check cost).</p></div>
+  </main></div>
+</body>
+</html>
