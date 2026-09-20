@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — Computer Networks</title>
+  <style>
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid #e5e7eb; border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .brief-nav .disabled { color:#9ca3af; background:#f9fafb; cursor:not-allowed; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6;">
+  <div style="max-width:720px;margin:0 auto;padding:20px;">
+    <div style="background:#ffffff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <nav class="brief-nav" aria-label="Brief navigation">
+        <a href="index.html">← All briefs</a>
+        <span class="disabled" aria-disabled="true">← Previous</span>
+        <span class="disabled" aria-disabled="true">Next →</span>
+      </nav>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Daily CS Professor Brief</div>
+        <h1 style="margin:8px 0 4px;font-size:26px;line-height:1.25;">Computer Networks: TCP Congestion Control</h1>
+        <p style="margin:0;color:#6b7280;font-size:14px;">Focus: How TCP adapts its sending rate to network congestion</p>
+      </div>
+      <h2 style="font-size:19px;margin:24px 0 10px;">1. Core Concepts</h2>
+      <p style="margin:0 0 12px;">TCP congestion control prevents a sender from injecting data into the network faster than the network can handle it. The sender maintains a <strong>congestion window (cwnd)</strong>, which limits how much unacknowledged data may be in flight.</p>
+      <ul style="padding-left:22px;margin:10px 0;">
+        <li><strong>cwnd:</strong> Sender-side congestion window.</li>
+        <li><strong>rwnd:</strong> Receiver-advertised window used for flow control.</li>
+        <li><strong>ssthresh:</strong> Slow-start threshold.</li>
+        <li><strong>Slow Start:</strong> Rapidly increases the sending rate.</li>
+        <li><strong>Congestion Avoidance:</strong> Increases the rate more cautiously.</li>
+        <li><strong>Fast Retransmit:</strong> Retransmits after duplicate ACK evidence rather than waiting for timeout.</li>
+        <li><strong>Fast Recovery:</strong> Attempts to recover from loss without returning completely to the initial sending rate.</li>
+      </ul>
+      <div style="background:#f8fafc;border-left:4px solid #64748b;padding:14px 16px;margin:18px 0;border-radius:6px;"><strong>Key relationship</strong><br>Effective sending window ≈ min(cwnd, rwnd)</div>
+      <h2 style="font-size:19px;margin:24px 0 10px;">2. Important Rules &amp; Formulas</h2>
+      <p style="margin:8px 0;"><strong>Slow Start:</strong> cwnd grows approximately exponentially with each round-trip time (RTT), because acknowledgements cause cwnd to increase repeatedly during the RTT.</p>
+      <div style="background:#f8fafc;padding:14px 16px;border-radius:8px;margin:12px 0;font-family:monospace;">Approximate progression:<br>cwnd = 1, 2, 4, 8, 16 ... MSS per RTT</div>
+      <p style="margin:8px 0;"><strong>Congestion Avoidance:</strong> cwnd grows approximately linearly—roughly one MSS per RTT in the classic model.</p>
+      <div style="background:#f8fafc;padding:14px 16px;border-radius:8px;margin:12px 0;font-family:monospace;">cwnd ≈ cwnd + 1 MSS per RTT</div>
+      <p style="margin:8px 0;">This behavior is commonly summarized as <strong>AIMD</strong>:</p>
+      <p style="margin:8px 0 16px;"><strong>Additive Increase, Multiplicative Decrease.</strong></p>
+      <h2 style="font-size:19px;margin:24px 0 10px;">3. Teaching Explanation</h2>
+      <p style="margin:0 0 12px;">A useful classroom analogy is a highway. TCP does not initially know how much traffic the highway can support, so it starts cautiously and increases traffic quickly while acknowledgements indicate successful delivery.</p>
+      <p style="margin:0 0 12px;">Once the sender reaches the slow-start threshold, it becomes more conservative and enters congestion avoidance. If packet loss suggests congestion, TCP reduces its sending rate.</p>
+      <p style="margin:0;">The important distinction for students is that <strong>flow control protects the receiver</strong>, while <strong>congestion control protects the network</strong>.</p>
+      <h2 style="font-size:19px;margin:24px 0 10px;">4. Examples</h2>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:12px;"><strong>Example 1 — Slow Start</strong><p style="margin:7px 0 0;">Suppose cwnd starts at 1 MSS. Ignoring implementation details, its approximate RTT-by-RTT growth is:</p><p style="margin:7px 0 0;font-family:monospace;">1 → 2 → 4 → 8 → 16 MSS</p><p style="margin:7px 0 0;">This demonstrates exponential growth.</p></div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:12px;"><strong>Example 2 — Entering Congestion Avoidance</strong><p style="margin:7px 0 0;">If ssthresh = 8 MSS, TCP grows rapidly until cwnd reaches the threshold. Afterward, growth becomes approximately linear:</p><p style="margin:7px 0 0;font-family:monospace;">1 → 2 → 4 → 8 → 9 → 10 → 11 ...</p></div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;"><strong>Example 3 — Receiver Limitation</strong><p style="margin:7px 0 0;">If cwnd = 20 KB but the receiver advertises rwnd = 8 KB, the sender is limited to approximately:</p><p style="margin:7px 0 0;font-family:monospace;">min(20 KB, 8 KB) = 8 KB</p></div>
+      <h2 style="font-size:19px;margin:24px 0 10px;">5. Common Misconceptions</h2>
+      <ul style="padding-left:22px;margin:10px 0;"><li><strong>“Slow Start is slow.”</strong><br>Despite its name, its window growth is aggressive and approximately exponential.</li><li style="margin-top:8px;"><strong>“cwnd and rwnd are the same.”</strong><br>cwnd addresses network congestion; rwnd addresses receiver capacity.</li><li style="margin-top:8px;"><strong>“Every packet loss always means TCP timeout.”</strong><br>Duplicate acknowledgements can allow TCP to detect and retransmit a missing segment before the retransmission timer expires.</li></ul>
+      <h2 style="font-size:19px;margin:24px 0 10px;">6. Exam &amp; Interview Points</h2>
+      <ul style="padding-left:22px;margin:10px 0;"><li>Be able to distinguish <strong>flow control</strong> from <strong>congestion control</strong>.</li><li>Know the roles of <strong>cwnd</strong>, <strong>rwnd</strong>, and <strong>ssthresh</strong>.</li><li>Remember: Slow Start ≈ exponential growth; Congestion Avoidance ≈ linear growth.</li><li>Understand <strong>AIMD</strong>.</li><li>Be prepared to calculate cwnd progression over several RTTs in simplified textbook problems.</li><li>Know why duplicate ACKs can provide evidence of packet loss before a timeout occurs.</li></ul>
+      <h2 style="font-size:19px;margin:24px 0 10px;">7. Practice Questions</h2>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:10px;"><strong>Q1.</strong> What is the primary difference between TCP flow control and congestion control?<p style="margin:7px 0 0;"><strong>Answer:</strong> Flow control prevents overwhelming the receiver; congestion control prevents overwhelming the network.</p></div>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:10px;"><strong>Q2.</strong> If cwnd begins at 1 MSS and remains in simplified Slow Start for four growth rounds, what sequence is observed?<p style="margin:7px 0 0;"><strong>Answer:</strong> 1 → 2 → 4 → 8 → 16 MSS.</p></div>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;"><strong>Q3.</strong> If cwnd = 15 KB and rwnd = 10 KB, what limits the amount of unacknowledged data the sender can have in flight?<p style="margin:7px 0 0;"><strong>Answer:</strong> The receiver window; the effective limit is approximately 10 KB.</p></div>
+      <div style="margin-top:24px;padding:16px;background:#f8fafc;border-radius:8px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">TCP dynamically controls its transmission rate using cwnd. Slow Start discovers available capacity quickly, Congestion Avoidance increases the rate cautiously, and packet-loss signals cause TCP to reduce its rate. Keep congestion control (network protection) distinct from flow control (receiver protection).</p></div>
+    </div>
+  </div>
+</body>
+</html>
