@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — B+ Trees and Database Indexes</title>
+  <style>
+    :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --wash:#f4f6f8; --paper:#fff; --accent:#3157d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:16px/1.6 Arial,Helvetica,sans-serif; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px; }
+    .paper { background:var(--paper); border-radius:14px; padding:clamp(20px,5vw,32px); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .disabled { color:#9ca3af !important; background:#f9fafb; cursor:not-allowed; }
+    h1 { margin:8px 0 4px; font-size:clamp(25px,6vw,32px); line-height:1.25; }
+    h2 { font-size:19px; margin:24px 0 10px; }
+    .kicker { color:var(--muted); font-size:13px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; }
+    .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .callout, .formula, .question { background:#f8fafc; border-radius:8px; padding:14px 16px; margin:12px 0; }
+    .callout { border-left:4px solid #64748b; }
+    .formula { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; }
+    .example { border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    ul { padding-left:22px; }
+    @media (max-width:420px) { .brief-nav a, .brief-nav span { padding:7px 8px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap"><main class="paper">
+    <nav class="brief-nav" aria-label="Brief navigation">
+      <a href="index.html">← All briefs</a>
+      <a href="binary_search_on_answer.html">← Previous</a>
+      <span class="disabled" aria-disabled="true">Next →</span>
+    </nav>
+    <header style="text-align:center;margin-bottom:24px;">
+      <div class="kicker">Daily CS Professor Brief · September 21, 2026</div>
+      <h1>Database Systems: B+ Trees and Database Indexes</h1>
+      <p class="subtitle">Focus: fast disk-oriented lookup, ordered scans, and the difference between B-trees and B+ trees.</p>
+    </header>
+
+    <h2>1. Core Concepts</h2>
+    <p>A <strong>B+ tree</strong> is a height-balanced, multiway search tree commonly used for database indexes. Each node holds many sorted separator keys, so a single page read rules out a large range of values.</p>
+    <ul>
+      <li><strong>Fan-out:</strong> number of children an internal node can have. High fan-out keeps the tree shallow.</li>
+      <li><strong>Internal node:</strong> stores separator keys and child pointers; it guides the search.</li>
+      <li><strong>Leaf node:</strong> stores every search key and a row pointer (or the row itself in a clustered index).</li>
+      <li><strong>Balanced:</strong> every leaf has the same depth, giving predictable lookup cost.</li>
+      <li><strong>Linked leaves:</strong> adjacent leaf pages point to each other, enabling efficient range scans.</li>
+    </ul>
+    <div class="callout"><strong>B-tree vs. B+ tree</strong><br>A B-tree may store records in internal nodes. A B+ tree stores data entries only at leaves, which improves fan-out and makes ordered scanning simple.</div>
+
+    <h2>2. Definitions, Formula &amp; Algorithm</h2>
+    <p>With fan-out <code>F</code> and <code>N</code> indexed entries, a rough height estimate is:</p>
+    <div class="formula">height ≈ ceil(log_F(N))</div>
+    <p>That logarithm matters because storage pages are expensive compared with CPU comparisons. A fan-out of 100 can index about one million entries in roughly three levels: root → internal page → leaf page.</p>
+    <p><strong>Lookup algorithm:</strong></p>
+    <div class="formula">node = root<br>while node is not a leaf:<br>&nbsp;&nbsp;find the first separator greater than the target<br>&nbsp;&nbsp;follow the child just to its left<br>search the target key in the leaf</div>
+    <p>Insertion descends to a leaf, adds the key in sorted order, and splits a full page. The split’s separator is propagated upward; if the root splits, a new root is created. Deletion may redistribute entries with a sibling or merge underfull pages.</p>
+
+    <h2>3. Teaching Explanation</h2>
+    <p>Think of a B+ tree as a library directory. The first sign tells you the shelf range, the next sign narrows it to one shelf, and the shelf itself contains the books in order. A binary tree would need many more levels because each node has only two choices.</p>
+    <p>Databases choose node sizes near a disk or memory page. Reading one page then provides dozens or hundreds of key comparisons in RAM. This design minimizes the costly part: page reads, not comparisons.</p>
+
+    <h2>4. Examples</h2>
+    <div class="example"><strong>Example 1 — Point lookup</strong><p style="margin:7px 0 0;">To find customer ID 42, internal separators choose one child at each level until its leaf page is reached. The leaf finds 42 and returns its row pointer. A shallow tree means only a few page reads.</p></div>
+    <div class="example"><strong>Example 2 — Range query</strong><p style="margin:7px 0 0;">For <code>WHERE created_at BETWEEN A AND B</code>, first find A’s leaf. Then follow leaf-to-leaf links, returning keys until B. The tree does not restart a root-to-leaf search for every row.</p></div>
+    <div class="example"><strong>Example 3 — Leaf split</strong><p style="margin:7px 0 0;">If a full leaf receives key 37, split it into two sorted leaves and insert a separator into the parent. The tree remains balanced because the new leaves stay at the same depth.</p></div>
+
+    <h2>5. Common Misconceptions</h2>
+    <ul>
+      <li><strong>“An index always makes a query faster.”</strong> It can add write cost and may be worse than a table scan for low-selectivity queries.</li>
+      <li><strong>“B+ tree search is O(log n), so disk layout is irrelevant.”</strong> Fan-out and page locality determine the number of I/Os, the practical cost.</li>
+      <li><strong>“A B+ tree is a binary search tree.”</strong> It is a multiway tree; its many children are the reason it is shallow.</li>
+      <li><strong>“Range scans need repeated lookups.”</strong> Linked leaf pages make a sequential scan after the first lookup possible.</li>
+    </ul>
+
+    <h2>6. Exam &amp; Interview Points</h2>
+    <ul>
+      <li>Explain why high fan-out minimizes disk I/O and why all leaves have equal depth.</li>
+      <li>Contrast a point lookup with a range scan; mention linked leaves for the latter.</li>
+      <li>State the usual complexity as <strong>O(log_F N)</strong> page traversals, plus leaf work.</li>
+      <li>Know the split path for insertion and the redistribute-or-merge path for deletion.</li>
+      <li>Connect indexes to trade-offs: faster reads, more storage, and slower inserts/updates/deletes.</li>
+    </ul>
+
+    <h2>7. Practice Questions</h2>
+    <div class="question"><strong>Q1.</strong> Why are B+ trees preferred over binary search trees for disk-based indexes?<p style="margin:7px 0 0;"><strong>Answer:</strong> Their high fan-out makes them much shallower, so lookups use far fewer page reads.</p></div>
+    <div class="question"><strong>Q2.</strong> How does a B+ tree execute a range scan efficiently?<p style="margin:7px 0 0;"><strong>Answer:</strong> It finds the starting key once, then follows linked leaf pages in sorted order until the range ends.</p></div>
+    <div class="question"><strong>Q3.</strong> What happens when a full leaf receives a new key?<p style="margin:7px 0 0;"><strong>Answer:</strong> The leaf splits, and a separator is inserted into the parent; the split can propagate up to a new root.</p></div>
+    <div class="callout" style="margin-top:24px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">A B+ tree is a page-friendly, balanced, multiway index. Internal pages route searches; leaves hold all data entries and connect in order. High fan-out keeps lookups shallow, while linked leaves make ranges efficient.</p></div>
+  </main></div>
+</body>
+</html>
