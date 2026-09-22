@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — Virtual Memory and Page Replacement</title>
+  <style>
+    :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --wash:#f4f6f8; --paper:#fff; --accent:#3157d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:16px/1.6 Arial,Helvetica,sans-serif; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px; }
+    .paper { background:var(--paper); border-radius:14px; padding:clamp(20px,5vw,32px); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .disabled { color:#9ca3af !important; background:#f9fafb; cursor:not-allowed; }
+    h1 { margin:8px 0 4px; font-size:clamp(25px,6vw,32px); line-height:1.25; }
+    h2 { font-size:19px; margin:24px 0 10px; }
+    .kicker { color:var(--muted); font-size:13px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; }
+    .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .callout, .formula, .question { background:#f8fafc; border-radius:8px; padding:14px 16px; margin:12px 0; }
+    .callout { border-left:4px solid #64748b; }
+    .formula { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; }
+    .example { border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    ul { padding-left:22px; }
+    @media (max-width:420px) { .brief-nav a, .brief-nav span { padding:7px 8px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap"><main class="paper">
+    <nav class="brief-nav" aria-label="Brief navigation">
+      <a href="index.html">← All briefs</a>
+      <a href="b_plus_trees.html">← Previous</a>
+      <span class="disabled" aria-disabled="true">Next →</span>
+    </nav>
+    <header style="text-align:center;margin-bottom:24px;">
+      <div class="kicker">Daily CS Professor Brief · September 22, 2026</div>
+      <h1>Operating Systems: Virtual Memory and Page Replacement</h1>
+      <p class="subtitle">Focus: address translation, page faults, locality, and why replacement policies affect performance.</p>
+    </header>
+
+    <h2>1. Core Concepts</h2>
+    <p><strong>Virtual memory</strong> lets each process use a private, contiguous virtual address space while the operating system maps its pages to physical-memory frames. Pages not currently in RAM can reside on secondary storage.</p>
+    <ul>
+      <li><strong>Page:</strong> a fixed-size chunk of virtual memory.</li>
+      <li><strong>Frame:</strong> a fixed-size chunk of physical memory that holds one page.</li>
+      <li><strong>Page table:</strong> maps a virtual page number to a frame number and protection/status bits.</li>
+      <li><strong>TLB:</strong> a small cache of recent page-table translations.</li>
+      <li><strong>Page fault:</strong> an exception raised when a referenced valid page is absent from RAM.</li>
+    </ul>
+    <div class="callout"><strong>Key idea</strong><br>Virtual memory is an abstraction, not a promise that every virtual address is backed by RAM. The mapping makes memory protection and controlled sharing possible too.</div>
+
+    <h2>2. Definitions, Formula &amp; Algorithm</h2>
+    <p>For a virtual address with page size <code>2^p</code> bytes:</p>
+    <div class="formula">virtual address = (virtual page number, offset)<br>physical address = (frame number, offset)</div>
+    <p>The offset is unchanged by translation. If a TLB hit takes time <code>t_TLB</code>, a memory access takes <code>t_M</code>, and the TLB hit ratio is <code>h</code>, a simple effective access-time model is:</p>
+    <div class="formula">EAT = h × (t_TLB + t_M) + (1 − h) × (t_TLB + 2t_M)</div>
+    <p><strong>Page-fault handling:</strong></p>
+    <div class="formula">trap to the OS<br>validate the address; abort if invalid<br>find a free frame or choose a victim page<br>write back a dirty victim if needed<br>read the demanded page into the frame<br>update the page table and TLB<br>restart the faulting instruction</div>
+
+    <h2>3. Teaching Explanation</h2>
+    <p>Imagine a desk (RAM) and a large filing cabinet (disk). A process sees a huge, neatly numbered collection of folders, but only the folders it is using need to be on the desk. The page table is the index saying where each folder currently lives.</p>
+    <p>When a needed folder is in the cabinet, the interruption is a page fault. Bringing it to the desk is far slower than an ordinary memory access, so the OS relies on <strong>locality</strong>: programs tend to reuse nearby data and recently used code.</p>
+
+    <h2>4. Examples</h2>
+    <div class="example"><strong>Example 1 — Address translation</strong><p style="margin:7px 0 0;">With 4 KiB pages, the offset uses 12 bits. If virtual page 7 maps to frame 42, an address in page 7 keeps its 12-bit offset and becomes an address in frame 42 at that same offset.</p></div>
+    <div class="example"><strong>Example 2 — Demand paging</strong><p style="margin:7px 0 0;">A program calls a function on a code page that is not in RAM. The CPU faults, the OS loads that page, records its frame in the page table, and restarts the instruction. The program normally does not need special code for this.</p></div>
+    <div class="example"><strong>Example 3 — Choosing a victim</strong><p style="margin:7px 0 0;">With three frames and reference string 1, 2, 3, 1, 4, LRU evicts page 2 when 4 arrives: page 1 was just reused, while 2 was least recently used.</p></div>
+
+    <h2>5. Common Misconceptions</h2>
+    <ul>
+      <li><strong>“A page fault is always an error.”</strong> It is expected under demand paging; an invalid address is the error case.</li>
+      <li><strong>“Virtual memory is just extra RAM.”</strong> It also provides isolation, permissions, and a per-process address-space abstraction.</li>
+      <li><strong>“More frames can never cause more faults.”</strong> Some policies, notably FIFO, can show Belady’s anomaly.</li>
+      <li><strong>“The TLB stores data bytes.”</strong> It caches translations, not the contents of pages.</li>
+    </ul>
+
+    <h2>6. Exam &amp; Interview Points</h2>
+    <ul>
+      <li>Walk through virtual-address translation and state why the offset does not change.</li>
+      <li>Contrast a TLB miss (often a page-table walk) with a page fault (disk I/O and OS handling).</li>
+      <li>Compare FIFO, LRU, and the theoretical optimal replacement policy.</li>
+      <li>Explain temporal and spatial locality as the reason paging works well in practice.</li>
+      <li>Recognize thrashing: excessive page faults leave the CPU waiting for storage rather than useful work.</li>
+    </ul>
+
+    <h2>7. Practice Questions</h2>
+    <div class="question"><strong>Q1.</strong> What part of a virtual address remains unchanged during paging translation?<p style="margin:7px 0 0;"><strong>Answer:</strong> The page offset; only the virtual page number is replaced with a physical frame number.</p></div>
+    <div class="question"><strong>Q2.</strong> Why is a high TLB hit ratio important?<p style="margin:7px 0 0;"><strong>Answer:</strong> It avoids extra page-table memory accesses on most loads and stores, reducing effective access time.</p></div>
+    <div class="question"><strong>Q3.</strong> What must happen before a faulting instruction can resume?<p style="margin:7px 0 0;"><strong>Answer:</strong> The OS must validate the reference, place the page in a frame, update translation state, and then restart the instruction.</p></div>
+    <div class="callout" style="margin-top:24px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">Paging maps virtual pages to physical frames while keeping the offset intact. The TLB makes common translations fast; page faults are expensive, so locality and a sensible replacement policy are central to performance.</p></div>
+  </main></div>
+</body>
+</html>
