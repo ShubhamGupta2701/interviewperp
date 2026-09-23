@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — CPU Pipelining and Hazards</title>
+  <style>
+    :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --wash:#f4f6f8; --paper:#fff; --accent:#3157d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:16px/1.6 Arial,Helvetica,sans-serif; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px; }
+    .paper { background:var(--paper); border-radius:14px; padding:clamp(20px,5vw,32px); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .disabled { color:#9ca3af !important; background:#f9fafb; cursor:not-allowed; }
+    h1 { margin:8px 0 4px; font-size:clamp(25px,6vw,32px); line-height:1.25; }
+    h2 { font-size:19px; margin:24px 0 10px; }
+    .kicker { color:var(--muted); font-size:13px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; }
+    .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .callout, .formula, .question { background:#f8fafc; border-radius:8px; padding:14px 16px; margin:12px 0; }
+    .callout { border-left:4px solid #64748b; }
+    .formula { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; }
+    .example { border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    ul { padding-left:22px; }
+    @media (max-width:420px) { .brief-nav a, .brief-nav span { padding:7px 8px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap"><main class="paper">
+    <nav class="brief-nav" aria-label="Brief navigation">
+      <a href="index.html">← All briefs</a>
+      <a href="virtual_memory_page_replacement.html">← Previous</a>
+      <span class="disabled" aria-disabled="true">Next →</span>
+    </nav>
+    <header style="text-align:center;margin-bottom:24px;">
+      <div class="kicker">Daily CS Professor Brief · September 23, 2026</div>
+      <h1>Computer Architecture: CPU Pipelining and Hazards</h1>
+      <p class="subtitle">Focus: overlapping instruction work, measuring throughput, and preserving correctness around dependencies and branches.</p>
+    </header>
+
+    <h2>1. Core Concepts</h2>
+    <p><strong>Pipelining</strong> divides instruction execution into stages so different instructions can occupy different stages at the same time. A classic five-stage pipeline is <code>IF → ID → EX → MEM → WB</code>: fetch, decode/register read, execute, memory access, and write-back.</p>
+    <ul>
+      <li><strong>Latency:</strong> time for one instruction to travel from its first stage to completion.</li>
+      <li><strong>Throughput:</strong> completed instructions per unit time; ideally one instruction completes each clock cycle after the pipeline fills.</li>
+      <li><strong>Structural hazard:</strong> two stages need the same hardware resource in one cycle.</li>
+      <li><strong>Data hazard:</strong> an instruction needs a value that an earlier instruction has not produced yet.</li>
+      <li><strong>Control hazard:</strong> the next instruction is unknown because a branch or jump changes control flow.</li>
+    </ul>
+    <div class="callout"><strong>Key idea</strong><br>Pipelining improves throughput, not the amount of useful work in an individual instruction. Stalls, forwarding logic, and branch prediction exist to keep overlapping work correct and productive.</div>
+
+    <h2>2. Definitions, Formula &amp; Algorithm</h2>
+    <p>For <code>n</code> instructions in an ideal <code>k</code>-stage pipeline with cycle time <code>T</code>:</p>
+    <div class="formula">non-pipelined time = n × k × T<br>pipelined time = (k + n − 1) × T<br>ideal speedup = (n × k) / (k + n − 1)</div>
+    <p>For a long stream, the ideal cycles per instruction (CPI) approaches 1. Real pipelines add penalties:</p>
+    <div class="formula">CPI = 1 + stall cycles per instruction<br>execution time = instruction count × CPI × clock-cycle time</div>
+    <p><strong>Typical response to a read-after-write dependency:</strong></p>
+    <div class="formula">if consumer needs a value before it is written back:<br>&nbsp;&nbsp;if a later pipeline register already holds the value, forward it to the consumer<br>&nbsp;&nbsp;otherwise insert a bubble (stall) until the value is available</div>
+
+    <h2>3. Teaching Explanation</h2>
+    <p>Think of a pipeline as a five-station assembly line. One instruction is being fetched while another is decoded, a third is calculated, and so on. The first finished unit still takes five station-times, but after the line is full, a finished unit can leave every station-time.</p>
+    <p>The tricky cases are when the line cannot safely continue. A consumer might arrive before its producer’s result, two jobs might demand one machine, or a branch might send the line down the wrong path. The processor either supplies the needed result early, waits, duplicates/separates a resource, or discards speculative work after discovering the correct path.</p>
+
+    <h2>4. Examples</h2>
+    <div class="example"><strong>Example 1 — Pipeline timing</strong><p style="margin:7px 0 0;">With five stages and 20 instructions, a non-pipelined design takes <code>20 × 5 = 100</code> cycles. An ideal pipeline takes <code>5 + 20 − 1 = 24</code> cycles, assuming balanced stages and no hazards.</p></div>
+    <div class="example"><strong>Example 2 — Data forwarding</strong><p style="margin:7px 0 0;"><code>add r1, r2, r3</code> followed by <code>sub r4, r1, r5</code> has a RAW dependency on <code>r1</code>. Forwarding can send the add result directly from a later stage to the subtract’s execute stage instead of waiting for register write-back.</p></div>
+    <div class="example"><strong>Example 3 — Load-use stall</strong><p style="margin:7px 0 0;"><code>lw r1, 0(r2)</code> followed immediately by <code>add r3, r1, r4</code> often needs one bubble even with forwarding: the loaded value arrives only after the memory stage, too late for the next instruction’s execute stage.</p></div>
+
+    <h2>5. Common Misconceptions</h2>
+    <ul>
+      <li><strong>“A five-stage pipeline makes every instruction five times faster.”</strong> Its single-instruction latency is still roughly five stages; the gain is steady-state throughput.</li>
+      <li><strong>“Forwarding removes every data hazard.”</strong> It handles many register dependencies, but a load-use pair can still require a stall.</li>
+      <li><strong>“Branches only cost time when taken.”</strong> Any unresolved branch can force a stall or misprediction recovery because the next fetch address is uncertain.</li>
+      <li><strong>“More pipeline stages always mean higher performance.”</strong> Deeper pipelines can raise clock frequency but also add latch overhead and increase misprediction penalties.</li>
+    </ul>
+
+    <h2>6. Exam &amp; Interview Points</h2>
+    <ul>
+      <li>Draw the five stages and distinguish latency from throughput.</li>
+      <li>Classify hazards as structural, data, or control; RAW is the common in-order data hazard.</li>
+      <li>Explain forwarding versus stalling, including why a load-use dependency is special.</li>
+      <li>Use <strong>CPI = 1 + stall cycles per instruction</strong> to connect hazards to execution time.</li>
+      <li>State that branch prediction improves average performance but needs recovery on a wrong prediction.</li>
+    </ul>
+
+    <h2>7. Practice Questions</h2>
+    <div class="question"><strong>Q1.</strong> Why can a pipeline complete nearly one instruction per cycle even though an instruction uses several stages?<p style="margin:7px 0 0;"><strong>Answer:</strong> Different instructions occupy different stages concurrently; after fill, one can leave the final stage each cycle.</p></div>
+    <div class="question"><strong>Q2.</strong> What is the difference between forwarding and a stall?<p style="margin:7px 0 0;"><strong>Answer:</strong> Forwarding routes a produced value directly to a consumer before register write-back; a stall inserts time when the value is not ready soon enough.</p></div>
+    <div class="question"><strong>Q3.</strong> A program executes 1,000 instructions with CPI 1.2 and a 2 ns clock. What is its execution time?<p style="margin:7px 0 0;"><strong>Answer:</strong> <code>1,000 × 1.2 × 2 ns = 2,400 ns</code>, or 2.4 μs.</p></div>
+    <div class="callout" style="margin-top:24px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">A pipeline overlaps instruction stages to increase throughput. Hazards are correctness conflicts caused by resources, dependencies, or uncertain control flow. Forwarding, stalls, and branch prediction trade hardware complexity for a CPI closer to one.</p></div>
+  </main></div>
+</body>
+</html>
