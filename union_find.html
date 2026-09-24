@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily CS Professor Brief — Union-Find (Disjoint Set Union)</title>
+  <style>
+    :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --wash:#f4f6f8; --paper:#fff; --accent:#3157d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--wash); color:var(--ink); font:16px/1.6 Arial,Helvetica,sans-serif; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px; }
+    .paper { background:var(--paper); border-radius:14px; padding:clamp(20px,5vw,32px); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .brief-nav { display:flex; justify-content:space-between; gap:10px; margin-bottom:24px; }
+    .brief-nav a, .brief-nav span { display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:7px; color:#374151; font-size:13px; text-decoration:none; }
+    .brief-nav a:hover { background:#f8fafc; }
+    .disabled { color:#9ca3af !important; background:#f9fafb; cursor:not-allowed; }
+    h1 { margin:8px 0 4px; font-size:clamp(25px,6vw,32px); line-height:1.25; }
+    h2 { font-size:19px; margin:24px 0 10px; }
+    .kicker { color:var(--muted); font-size:13px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; }
+    .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .callout, .formula, .question { background:#f8fafc; border-radius:8px; padding:14px 16px; margin:12px 0; }
+    .callout { border-left:4px solid #64748b; }
+    .formula { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; }
+    .example { border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    ul { padding-left:22px; }
+    @media (max-width:420px) { .brief-nav a, .brief-nav span { padding:7px 8px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap"><main class="paper">
+    <nav class="brief-nav" aria-label="Brief navigation">
+      <a href="index.html">← All briefs</a>
+      <a href="cpu_pipelining_hazards.html">← Previous</a>
+      <span class="disabled" aria-disabled="true">Next →</span>
+    </nav>
+    <header style="text-align:center;margin-bottom:24px;">
+      <div class="kicker">Daily CS Professor Brief · September 24, 2026</div>
+      <h1>Data Structures &amp; Algorithms: Union-Find</h1>
+      <p class="subtitle">Focus: maintaining disjoint groups, fast connectivity checks, and the two optimizations that make it nearly constant time.</p>
+    </header>
+
+    <h2>1. Core Concepts</h2>
+    <p><strong>Union-Find</strong>, also called <strong>Disjoint Set Union (DSU)</strong>, maintains a partition of elements into non-overlapping sets. It is ideal when sets only merge and you repeatedly need to ask whether two items are connected.</p>
+    <ul>
+      <li><strong>find(x):</strong> returns the representative (root) of the set containing <code>x</code>.</li>
+      <li><strong>union(a, b):</strong> merges the sets containing <code>a</code> and <code>b</code>.</li>
+      <li><strong>Connected:</strong> <code>find(a) == find(b)</code>.</li>
+      <li><strong>Parent array:</strong> each element points toward a root; a root points to itself.</li>
+    </ul>
+    <div class="callout"><strong>Key idea</strong><br>DSU does not store every path in a graph. It stores just enough structure to answer “same component?” while edges are being added.</div>
+
+    <h2>2. Definitions, Formula &amp; Algorithm</h2>
+    <p>Initialize <code>parent[x] = x</code> and <code>size[x] = 1</code> for every element. Use two optimizations:</p>
+    <div class="formula">find(x):
+  if parent[x] != x: parent[x] = find(parent[x])
+  return parent[x]
+
+union(a, b):
+  ra, rb = find(a), find(b)
+  if ra == rb: return false
+  attach the smaller tree under the larger tree
+  return true</div>
+    <p><strong>Path compression</strong> makes every visited node point closer to the root. <strong>Union by size/rank</strong> keeps trees shallow by attaching the smaller tree below the larger.</p>
+    <div class="formula">m operations on n elements: O(m α(n)) amortized
+α(n) = inverse Ackermann function, effectively &lt; 5 in practice</div>
+
+    <h2>3. Teaching Explanation</h2>
+    <p>Imagine student clubs. At first, each student is their own club. When two clubs collaborate, you join their leaders. To see whether two students are in the same club, follow each student’s leader chain until reaching the leader at the top.</p>
+    <p>Without care, those chains can become long. Union by size avoids making a large club report through a tiny club. Path compression is like giving everyone you met the leader’s direct phone number. Future checks become extremely fast.</p>
+
+    <h2>4. Examples</h2>
+    <div class="example"><strong>Example 1 — Connected components</strong><p style="margin:7px 0 0;">Start with <code>{1}, {2}, {3}, {4}</code>. After <code>union(1, 2)</code> and <code>union(2, 3)</code>, <code>find(1) == find(3)</code>, so 1 and 3 are connected. Element 4 is still separate.</p></div>
+    <div class="example"><strong>Example 2 — Detecting a cycle</strong><p style="margin:7px 0 0;">Process undirected edges <code>(1,2), (2,3), (1,3)</code>. The first two unions merge components. For <code>(1,3)</code>, both endpoints already share a root, so that edge closes a cycle.</p></div>
+    <div class="example"><strong>Example 3 — Kruskal’s MST</strong><p style="margin:7px 0 0;">Consider edges in increasing weight. Add an edge only when its endpoints have different roots, then union them. DSU prevents adding an edge that would form a cycle.</p></div>
+
+    <h2>5. Common Misconceptions</h2>
+    <ul>
+      <li><strong>“DSU can answer any graph path query.”</strong> It answers component membership, not the actual path, distance, or a route between nodes.</li>
+      <li><strong>“find is always O(1).”</strong> A single unoptimized find can be linear; the near-constant bound requires both standard optimizations amortized over operations.</li>
+      <li><strong>“Union-Find supports removing edges naturally.”</strong> Ordinary DSU handles merges well but not splits; dynamic connectivity needs different techniques.</li>
+      <li><strong>“Rank means the set size.”</strong> Rank is usually a height bound; size is a count. Either can guide union, but they are not the same value.</li>
+    </ul>
+
+    <h2>6. Exam &amp; Interview Points</h2>
+    <ul>
+      <li>State the invariant: roots represent sets, and two elements share a set exactly when their roots match.</li>
+      <li>Explain why path compression belongs inside <code>find</code>, not as a separate pass.</li>
+      <li>Use DSU for incremental connectivity, cycle detection in undirected graphs, and Kruskal’s algorithm.</li>
+      <li>Remember that successful <code>union</code> calls reduce the number of components by one.</li>
+      <li>Give the amortized complexity as <code>O(α(n))</code>, commonly treated as constant in practice.</li>
+    </ul>
+
+    <h2>7. Practice Questions</h2>
+    <div class="question"><strong>Q1.</strong> Why does <code>find(a) == find(b)</code> determine connectivity in DSU?<p style="margin:7px 0 0;"><strong>Answer:</strong> Each set has exactly one root representative, so matching roots mean the elements belong to the same set.</p></div>
+    <div class="question"><strong>Q2.</strong> What changes when path compression runs on <code>find(x)</code>?<p style="margin:7px 0 0;"><strong>Answer:</strong> Nodes along x’s path are rewired to point directly to the root, making later finds shorter.</p></div>
+    <div class="question"><strong>Q3.</strong> How does Kruskal’s algorithm use DSU?<p style="margin:7px 0 0;"><strong>Answer:</strong> For each lightest remaining edge, it adds the edge and unions its endpoints only if their roots differ, thereby avoiding cycles.</p></div>
+    <div class="callout" style="margin-top:24px;"><strong>Professor's 60-second recap</strong><p style="margin:7px 0 0;">Union-Find represents each connected component as a rooted tree. <code>find</code> identifies a component and <code>union</code> merges two of them. Path compression plus union by size/rank makes a long sequence of operations effectively constant time.</p></div>
+  </main></div>
+</body>
+</html>
